@@ -1,0 +1,42 @@
+# Control plane image: builds the console, then serves it next to the API.
+#
+#   docker build -f deploy/docker/Dockerfile.control -t skein-control .
+#   docker run -p 7800:7800 -v skein-data:/data -e SKEIN_TOKEN=change-me skein-control
+# (docker-compose.yml at the repository root wires up the full demo.)
+
+FROM node:22-alpine AS console
+# Some regions reach the default npm registry slowly. Pass a registry host (without the
+# scheme) to switch, e.g. --build-arg NPM_REGISTRY=registry.example.com; default unchanged.
+ARG NPM_REGISTRY=""
+WORKDIR /src/services/console
+COPY services/console/package.json services/console/package-lock.json ./
+RUN if [ -n "$NPM_REGISTRY" ]; then npm config set registry "https://$NPM_REGISTRY"; fi \
+ && npm ci --no-audit --no-fund --fetch-timeout=600000
+COPY services/console/ ./
+RUN npm run build
+
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    SKEIN_DB=/data/skein.db \
+    SKEIN_BLOB_ROOT=/data/blobs \
+    SKEIN_HOST=0.0.0.0 \
+    SKEIN_PORT=7800 \
+    SKEIN_CONSOLE_DIR=/app/console
+WORKDIR /app
+# Optional PyPI index URL, same idea as NPM_REGISTRY:
+#   --build-arg PIP_INDEX_URL=https://pypi.example.com/simple
+ARG PIP_INDEX_URL=""
+# COPY of a directory copies its contents: name each destination explicitly so the
+# package keeps its src/ layout.
+COPY services/control/pyproject.toml ./services/control/pyproject.toml
+COPY services/control/src ./services/control/src
+RUN PIP_ARGS=""; if [ -n "$PIP_INDEX_URL" ]; then PIP_ARGS="--index-url $PIP_INDEX_URL"; fi \
+ && pip install --no-cache-dir $PIP_ARGS ./services/control
+COPY --from=console /src/services/console/dist ./console/dist
+RUN useradd --system --uid 10001 --home /home/skein --create-home skein \
+ && mkdir -p /data && chown skein /data
+USER skein
+VOLUME /data
+EXPOSE 7800
+CMD ["python3", "-m", "skein"]

@@ -1,0 +1,75 @@
+# The full loop in one command: control plane + a node with a mock coding agent + a demo
+# assistant. Everything here is demo-only (the tokens are public on purpose); read
+# deploy/docker/README.md before reusing any of it for a real deployment.
+name: skein-demo
+
+services:
+  control:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.control
+      args:
+        # optional: an npm registry host when the default one is slow, e.g.
+        # NPM_REGISTRY=registry.example.com docker compose build
+        NPM_REGISTRY: ${NPM_REGISTRY:-}
+        # optional: a PyPI index URL, e.g. PIP_INDEX_URL=https://pypi.example.com/simple
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-}
+    environment:
+      # demo credentials — replace before exposing anything
+      SKEIN_TOKEN: demo-master-token
+      SKEIN_PUBLIC_URL: http://localhost:7800
+      # The demo assistant's key, declared here instead of issued from the console.
+      SKEIN_ASSISTANTS: '[{"name":"demo-assistant","purpose":"the docker compose demo","key":"skein_at_demo0000000000000000000000000000000000000000"}]'
+    ports:
+      - "7800:7800"
+    volumes:
+      - control-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7800/health/ready')"
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  node:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.node
+      args:
+        # optional: a Debian mirror host when the default one is slow, e.g.
+        # APT_MIRROR=mirrors.example.com docker compose build
+        APT_MIRROR: ${APT_MIRROR:-}
+    environment:
+      SKEIN_TOKEN: demo-master-token
+      NODE_ID: demo-node
+      NODE_NAME: demo node
+      PLATFORMS: demo
+      REPO_MAP: '{"demo":"/srv/repos/app"}'
+      MAX_WORKERS: '1'
+    volumes:
+      - node-repos:/srv/repos
+    depends_on:
+      control:
+        condition: service_healthy
+
+  demo:
+    image: node:22-alpine
+    working_dir: /demo
+    volumes:
+      - ./deploy/docker/demo.mjs:/demo/demo.mjs:ro
+    environment:
+      CONTROL_URL: http://control:7800
+      SKEIN_TOKEN: demo-master-token
+      SKEIN_ASSISTANT_KEY: skein_at_demo0000000000000000000000000000000000000000
+      PLATFORM: demo
+    command: ["node", "/demo/demo.mjs"]
+    depends_on:
+      control:
+        condition: service_healthy
+
+volumes:
+  control-data:
+  node-repos:

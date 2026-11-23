@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# `claude` stand-in for the docker compose demo: runs the mock coding agent with the same
+# command line the node agent uses. Point CLAUDE_BIN at this to try the platform without
+# a model key; it never calls any model.
+set -euo pipefail
+exec node /opt/mock-agent/mock-agent.mjs "$@"

@@ -1,0 +1,35 @@
+# Node image for the docker compose demo: the real node agent plus a mock coding agent,
+# so the demo runs without a model key or access to a model gateway.
+#
+#   docker build -f deploy/docker/Dockerfile.node -t skein-node .
+
+FROM node:22-slim
+
+# Some regions reach the default Debian mirrors slowly. Pass the host name of a mirror
+# (e.g. --build-arg APT_MIRROR=mirrors.example.com) to switch; the default is unchanged.
+ARG APT_MIRROR=""
+RUN if [ -n "$APT_MIRROR" ]; then sed -i "s|deb.debian.org|${APT_MIRROR}|g" /etc/apt/sources.list.d/debian.sources; fi \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY services/node-agent/package.json ./node-agent/
+RUN cd node-agent && npm install --omit=dev --no-audit --no-fund
+COPY services/node-agent/ ./node-agent/
+COPY deploy/docker/mock-agent.mjs /opt/mock-agent/mock-agent.mjs
+COPY deploy/docker/claude /usr/local/bin/claude
+COPY deploy/docker/entrypoint-node.sh /usr/local/bin/entrypoint-node
+RUN chmod +x /usr/local/bin/claude /usr/local/bin/entrypoint-node
+
+ENV CONTROLLER_URL=ws://control:7800/api/agent/channel \
+    SKEIN_CONTROL_URL=http://control:7800 \
+    PLATFORMS=demo \
+    REPO_MAP={"demo":"/srv/repos/app"} \
+    MAX_WORKERS=1 \
+    CLAUDE_BIN=claude \
+    PUSH_BRANCH=1 \
+    NODE_ID=demo-node
+
+VOLUME /srv/repos
+CMD ["/usr/local/bin/entrypoint-node"]
