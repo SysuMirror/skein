@@ -1,0 +1,15 @@
+[Unit]
+Description=Skein watchdog (external control loop: tickets / daily review)
+After=network-online.target skein-control.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@SKEIN_REPO@/services/control
+EnvironmentFile=@SKEIN_ENV@
+ExecStart=/usr/bin/env PYTHONPATH=@SKEIN_REPO@/services/control/src python3 -m skein.watchdog_agent
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

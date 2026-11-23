@@ -1,0 +1,27 @@
+name: Feature request
+description: A capability the platform should have
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the workflow, not only the desired UI. What do you do today instead?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like Skein to do?
+      description: |
+        If it fits one of the extension points (login provider, code hosting, model
+        gateway, notification channel, intake source), say which — see docs/extending.md.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

@@ -1,0 +1,16 @@
+[Unit]
+Description=Skein control plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@SKEIN_REPO@/services/control
+EnvironmentFile=@SKEIN_ENV@
+ExecStart=/usr/bin/env PYTHONPATH=@SKEIN_REPO@/services/control/src python3 -m skein
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

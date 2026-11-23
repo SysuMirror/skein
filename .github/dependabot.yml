@@ -1,0 +1,34 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/services/control"
+    schedule:
+      interval: "weekly"
+    groups:
+      python:
+        patterns: ["*"]
+  - package-ecosystem: "npm"
+    directory: "/services/console"
+    schedule:
+      interval: "weekly"
+    groups:
+      console:
+        patterns: ["*"]
+  - package-ecosystem: "npm"
+    directory: "/services/node-agent"
+    schedule:
+      interval: "weekly"
+    groups:
+      node-agent:
+        patterns: ["*"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: "docker"
+    directory: "/deploy/docker"
+    schedule:
+      interval: "weekly"

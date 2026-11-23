@@ -1,0 +1,14 @@
+{
+  "name": "skein-node-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Skein 节点代理：反向拨入、worktree 隔离、Claude Code 会话、transcript 同步",
+  "scripts": {
+    "start": "node node-agent.mjs",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "ws": "^8.18.2"
+  }
+}

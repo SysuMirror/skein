@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Skein management CLI (a thin HTTP client for the control plane's own management API).
+#
+#   skein-cli user list
+#   skein-cli user create --email a@example.com --role owner --password-stdin
+#   skein-cli assistant issue --name forum-bot --purpose "..."
+#   skein-cli assistant list
+#
+# It reads SKEIN_TOKEN and SKEIN_CONTROL_URL from the environment file the control plane
+# uses (SKEIN_ENV_FILE, default /etc/skein/env) unless they are already exported, then
+# talks to the control plane over HTTP. The control plane is the only process that writes
+# the database; this script never touches it directly.
+set -euo pipefail
+
+SKEIN_ENV_FILE=${SKEIN_ENV_FILE:-/etc/skein/env}
+if [ -r "$SKEIN_ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$SKEIN_ENV_FILE"
+  set +a
+fi
+
+HOME_DIR=${SKEIN_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
+exec env PYTHONPATH="$HOME_DIR/services/control/src${PYTHONPATH:+:$PYTHONPATH}" \
+  python3 -m skein "$@"

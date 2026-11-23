@@ -1,0 +1,17 @@
+[Unit]
+Description=Skein node agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/repos/skein/services/node-agent
+EnvironmentFile=%h/node-agent.env
+ExecStart=/usr/bin/env node node-agent.mjs
+Restart=always
+RestartSec=5
+# 停 agent 时把整组（含正在跑的 worker）一起收掉，避免留下孤儿 worker 继续消耗模型额度
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

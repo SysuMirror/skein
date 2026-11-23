@@ -1,0 +1,14 @@
+.git
+.github
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/data
+**/*.log
+services/node-agent/test
